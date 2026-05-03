@@ -8,7 +8,7 @@ export interface LinkGraph {
   orphans: string[];
 }
 
-const EXCLUDED_FROM_ORPHANS = new Set(["wiki/index.md", "wiki/log.md", "index.md", "log.md"]);
+const EXCLUDED_FROM_ORPHANS = new Set(["wiki/index.md", "wiki/log.md", "index.md", "log.md", "SCHEMA.md"]);
 
 export function extractWikilinks(content: string): string[] {
   const links: string[] = [];
@@ -36,7 +36,7 @@ async function resolveLink(
   if (allPages.includes(withWiki)) return withWiki;
 
   // Check in subdirectories
-  const dirs = ["wiki/entities", "wiki/concepts", "wiki/sources", "wiki/synthesis"];
+  const dirs = ["wiki/topics", "wiki/projects", "wiki/playbooks"];
   for (const dir of dirs) {
     const candidate = dir + "/" + withMd;
     if (allPages.includes(candidate)) return candidate;
@@ -62,6 +62,7 @@ export async function buildLinkGraph(wiki: StorageProvider): Promise<LinkGraph> 
 
   // Build outbound links and resolve them
   for (const page of allPages) {
+    if (EXCLUDED_FROM_ORPHANS.has(page) || EXCLUDED_FROM_ORPHANS.has(page.split("/").pop()!)) continue;
     const content = await wiki.readPage(page);
     if (!content) continue;
 

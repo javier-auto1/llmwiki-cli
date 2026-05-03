@@ -21,7 +21,7 @@ Allowed keys: \`title\`, \`content\` (required strings); optional \`description\
 On **edit**, \`created\` is always taken from the existing file when present; otherwise defaults or your JSON value applies. \`updated\` defaults to today unless you pass it.
 
 \`\`\`bash
-wiki write wiki/concepts/attention.md <<'EOF'
+wiki write wiki/topics/attention.md <<'EOF'
 {
   "title": "Attention",
   "description": "Core mechanism in transformers",
@@ -41,8 +41,8 @@ Output is the file on disk (frontmatter + body), not JSON.
 ### Paths are relative to wiki root
 
 \`\`\`bash
-wiki read wiki/concepts/attention.md      # correct
-wiki read /home/user/my-wiki/wiki/concepts/attention.md  # wrong
+wiki read wiki/topics/attention.md      # correct
+wiki read /home/user/my-wiki/wiki/topics/attention.md  # wrong
 \`\`\`
 
 ### Wikilinks
@@ -50,6 +50,8 @@ wiki read /home/user/my-wiki/wiki/concepts/attention.md  # wrong
 - \`[[page-name]]\` — resolved by filename across all wiki directories
 - \`[[page-name|Display Text]]\` — link with custom display text
 - Resolution order: exact path → wiki/ prefix → subdirectories → filename match anywhere
+
+**When writing or updating a page, always add wikilinks to related pages you know exist.** This keeps the knowledge graph connected. If a topic page mentions a project, link it. If a playbook references a topic, link it. After ingesting, check \`wiki orphans\` and connect any isolated pages.
 
 ### Page format
 
@@ -63,38 +65,70 @@ The CLI emits YAML frontmatter from JSON; body is your \`content\` string unchan
 ### Directory structure
 
 \`\`\`
-raw/                  # Immutable source documents (paste originals here)
-  assets/             # Downloaded images and files
-wiki/                 # LLM-generated pages (all knowledge lives here)
+raw/                  # Conversation transcripts and raw sources (immutable)
+wiki/                 # LLM-curated knowledge pages (all knowledge lives here)
   index.md            # Master index — updated by wiki write / delete
-  entities/           # People, orgs, products
-  concepts/           # Ideas, frameworks, theories
-  sources/            # One summary per ingested source
-  synthesis/          # Cross-cutting analysis
+  topics/             # Evergreen knowledge: what we know, how things work, decisions
+  projects/           # Time-bounded context per project (archive when done)
+  playbooks/          # Prescriptive processes: how we do things (follow this)
 \`\`\`
 
 ## Workflows
 
-### Ingest a source
+### Ingest a conversation
+
+Before writing anything, critically evaluate: does this conversation contain knowledge worth preserving? Skip ingestion entirely if the conversation is exploratory with no conclusions, a one-off question with no reusable answer, or already fully covered by existing wiki pages.
+
+If worth ingesting, ask the user clarifying questions before writing:
+- What project is this related to, if any?
+- Is there a specific page this should update, or is this a new topic?
+
+Then identify where each piece of knowledge belongs:
+- Evergreen knowledge about a subject → \`wiki/topics/<subject>.md\`
+- Active project context → \`wiki/projects/<name>.md\`
+- Repeatable process → \`wiki/playbooks/<process>.md\`
+
+A focused conversation may only update one page. Multiple pages are a possibility, not a requirement.
+
+For each page to write or update:
+1. \`wiki read\` the target page if it exists — merge, don't duplicate
+2. \`wiki write\` with \`description\` as a mandatory 1–2 sentence executive summary, and body content with **bolded key passages** on the most important extracts
 
 \`\`\`bash
-# 1. Raw capture (optional — plain markdown, no index upsert unless under wiki/)
-wiki write raw/paper.txt <<'EOF'
-{"title":"paper-full","content":"Full text…"}
+# Optional: save raw transcript
+wiki write raw/conversation-2024-01-15.md <<'EOF'
+{"title":"conversation-2024-01-15","content":"Full transcript…"}
 EOF
 
-# 2. Structured wiki page (JSON) — index line uses title
-wiki write wiki/sources/paper.md <<'EOF'
-{"title":"Attention Is All You Need","tags":["transformers"],"source":"https://arxiv.org/abs/1706.03762","content":"## Summary\\n…"}
+# Focused conversation → single topic update
+wiki write wiki/topics/auth-system.md <<'EOF'
+{
+  "title": "Auth System",
+  "description": "JWT-based auth with Redis session store; rotate keys quarterly.",
+  "content": "## How it works\\n\\n**We use JWT tokens with a Redis session store.** Tokens expire after 24h.\\n\\n..."
+}
+EOF
+
+# Broader conversation → topic + playbook
+wiki write wiki/topics/deployment.md <<'EOF'
+{"title":"Deployment","description":"Blue/green deploys on ECS; rollback via previous task definition.","content":"..."}
+EOF
+wiki write wiki/playbooks/rollback.md <<'EOF'
+{"title":"Rollback Process","description":"Steps to roll back a failed ECS deployment.","content":"**1. Identify the previous stable task definition.** ..."}
+EOF
+
+# Project-specific context
+wiki write wiki/projects/q3-migration.md <<'EOF'
+{"title":"Q3 DB Migration","description":"Migrating users table to new schema; target: end of Q3.","content":"**Decision: use shadow table approach** to avoid downtime. ..."}
 EOF
 \`\`\`
 
 ### Answer a question using the wiki
 
 \`\`\`bash
-wiki search "attention mechanism"
-wiki read wiki/concepts/attention.md
-wiki links wiki/concepts/attention.md
+wiki search "auth system"
+wiki read wiki/topics/auth-system.md
+wiki links wiki/topics/auth-system.md
 \`\`\`
 
 ### Maintain wiki health

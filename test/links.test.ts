@@ -82,24 +82,24 @@ describe("buildLinkGraph", () => {
   it("excludes index.md and log.md from orphans", async () => {
     await wiki.writePage("wiki/index.md", "Index page.");
     await wiki.writePage("wiki/log.md", "Log page.");
-    await wiki.writePage("wiki/concepts/a.md", "A page.");
+    await wiki.writePage("wiki/topics/a.md", "A page.");
 
     const graph = await buildLinkGraph(wiki);
     expect(graph.orphans).not.toContain("wiki/index.md");
     expect(graph.orphans).not.toContain("wiki/log.md");
-    expect(graph.orphans).toContain("wiki/concepts/a.md");
+    expect(graph.orphans).toContain("wiki/topics/a.md");
   });
 
   it("resolves links by filename across directories", async () => {
     await wiki.writePage(
-      "wiki/sources/paper.md",
+      "wiki/topics/paper.md",
       "Mentions [[attention]].",
     );
-    await wiki.writePage("wiki/concepts/attention.md", "The concept.");
+    await wiki.writePage("wiki/topics/attention.md", "The concept.");
 
     const graph = await buildLinkGraph(wiki);
-    const paperData = graph.pages.get("wiki/sources/paper.md")!;
-    expect(paperData.outbound).toEqual(["wiki/concepts/attention.md"]);
+    const paperData = graph.pages.get("wiki/topics/paper.md")!;
+    expect(paperData.outbound).toEqual(["wiki/topics/attention.md"]);
     expect(graph.brokenLinks).toHaveLength(0);
   });
 
@@ -120,8 +120,8 @@ describe("buildLinkGraph", () => {
   });
 
   it("resolves links with wiki/ prefix", async () => {
-    await wiki.writePage("wiki/sources/paper.md", "See [[concepts/attention]].");
-    await wiki.writePage("wiki/concepts/attention.md", "Attention concept.");
+    await wiki.writePage("wiki/topics/paper.md", "See [[concepts/attention]].");
+    await wiki.writePage("wiki/topics/attention.md", "Attention concept.");
     const graph = await buildLinkGraph(wiki);
     expect(graph.brokenLinks).toHaveLength(0);
   });

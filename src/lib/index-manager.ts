@@ -1,6 +1,6 @@
 import type { StorageProvider } from "../types.ts";
 
-const SECTIONS = ["Sources", "Entities", "Concepts", "Synthesis"] as const;
+const SECTIONS = ["Topics", "Projects", "Playbooks"] as const;
 
 function categoryFromPath(pagePath: string): string {
   const parts = pagePath.replace(/\\/g, "/").split("/");
@@ -9,7 +9,7 @@ function categoryFromPath(pagePath: string): string {
       return section;
     }
   }
-  return "Concepts"; // default
+  return "Topics"; // default
 }
 
 export class IndexManager {

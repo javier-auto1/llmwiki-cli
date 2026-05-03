@@ -70,14 +70,14 @@ describe("write and read commands", () => {
       content: "# Attention\n\nA mechanism in transformers.",
     });
     const writeResult = await runWiki(
-      ["-w", "testwiki", "write", "wiki/concepts/attention.md"],
+      ["-w", "testwiki", "write", "wiki/topics/attention.md"],
       payload,
     );
     expect(writeResult.exitCode).toBe(0);
-    expect(writeResult.stdout).toContain("wrote wiki/concepts/attention.md");
+    expect(writeResult.stdout).toContain("wrote wiki/topics/attention.md");
     expect(writeResult.stdout).toContain("updated index:");
 
-    const readResult = await runWiki(["-w", "testwiki", "read", "wiki/concepts/attention.md"]);
+    const readResult = await runWiki(["-w", "testwiki", "read", "wiki/topics/attention.md"]);
     expect(readResult.exitCode).toBe(0);
     expect(readResult.stdout).toContain("title: Attention");
     expect(readResult.stdout).toContain("# Attention");
@@ -93,7 +93,7 @@ describe("write and read commands", () => {
   it("write rejects invalid JSON", async () => {
     await initWiki();
     const result = await runWiki(
-      ["-w", "testwiki", "write", "wiki/concepts/x.md"],
+      ["-w", "testwiki", "write", "wiki/topics/x.md"],
       "not json",
     );
     expect(result.exitCode).toBe(1);
@@ -103,7 +103,7 @@ describe("write and read commands", () => {
   it("write rejects unknown JSON keys", async () => {
     await initWiki();
     const result = await runWiki(
-      ["-w", "testwiki", "write", "wiki/concepts/x.md"],
+      ["-w", "testwiki", "write", "wiki/topics/x.md"],
       jp({ title: "T", content: "C", extra: 1 }),
     );
     expect(result.exitCode).toBe(1);
@@ -113,7 +113,7 @@ describe("write and read commands", () => {
   it("write rejects invalid source URL", async () => {
     await initWiki();
     const result = await runWiki(
-      ["-w", "testwiki", "write", "wiki/concepts/x.md"],
+      ["-w", "testwiki", "write", "wiki/topics/x.md"],
       jp({ title: "T", content: "C", source: "not-a-url" }),
     );
     expect(result.exitCode).toBe(1);
@@ -123,23 +123,23 @@ describe("write and read commands", () => {
   it("write upserts index on second write for same path", async () => {
     await initWiki();
     await runWiki(
-      ["-w", "testwiki", "write", "wiki/concepts/a.md"],
+      ["-w", "testwiki", "write", "wiki/topics/a.md"],
       jp({ title: "First", content: "# First\n" }),
     );
     await runWiki(
-      ["-w", "testwiki", "write", "wiki/concepts/a.md"],
+      ["-w", "testwiki", "write", "wiki/topics/a.md"],
       jp({ title: "Second", content: "# Second\n" }),
     );
     const indexContent = await readFile(join(wikiDir, "wiki/index.md"), "utf-8");
-    expect(indexContent).toContain("[[wiki/concepts/a.md]]");
+    expect(indexContent).toContain("[[wiki/topics/a.md]]");
     expect(indexContent).toContain("— Second");
-    expect(indexContent.match(/\[\[wiki\/concepts\/a\.md\]\]/g)?.length).toBe(1);
+    expect(indexContent.match(/\[\[wiki\/topics\/a\.md\]\]/g)?.length).toBe(1);
   });
 
   it("write preserves created on edit when frontmatter had created", async () => {
     await initWiki();
     await runWiki(
-      ["-w", "testwiki", "write", "wiki/concepts/d.md"],
+      ["-w", "testwiki", "write", "wiki/topics/d.md"],
       jp({
         title: "D",
         content: "# D\n",
@@ -148,7 +148,7 @@ describe("write and read commands", () => {
       }),
     );
     await runWiki(
-      ["-w", "testwiki", "write", "wiki/concepts/d.md"],
+      ["-w", "testwiki", "write", "wiki/topics/d.md"],
       jp({
         title: "D2",
         content: "# D2\n",
@@ -156,7 +156,7 @@ describe("write and read commands", () => {
         updated: "2099-06-01",
       }),
     );
-    const readResult = await runWiki(["-w", "testwiki", "read", "wiki/concepts/d.md"]);
+    const readResult = await runWiki(["-w", "testwiki", "read", "wiki/topics/d.md"]);
     expect(readResult.stdout).toContain("2020-01-15");
     expect(readResult.stdout).toContain("2099-06-01");
   });
@@ -166,25 +166,25 @@ describe("delete command", () => {
   it("deletes page and removes index line", async () => {
     await initWiki();
     await runWiki(
-      ["-w", "testwiki", "write", "wiki/concepts/z.md"],
+      ["-w", "testwiki", "write", "wiki/topics/z.md"],
       jp({ title: "Z", content: "# Z\n" }),
     );
     let indexContent = await readFile(join(wikiDir, "wiki/index.md"), "utf-8");
-    expect(indexContent).toContain("[[wiki/concepts/z.md]]");
+    expect(indexContent).toContain("[[wiki/topics/z.md]]");
 
-    const del = await runWiki(["-w", "testwiki", "delete", "wiki/concepts/z.md"]);
+    const del = await runWiki(["-w", "testwiki", "delete", "wiki/topics/z.md"]);
     expect(del.exitCode).toBe(0);
 
-    const readMissing = await runWiki(["-w", "testwiki", "read", "wiki/concepts/z.md"]);
+    const readMissing = await runWiki(["-w", "testwiki", "read", "wiki/topics/z.md"]);
     expect(readMissing.exitCode).toBe(1);
 
     indexContent = await readFile(join(wikiDir, "wiki/index.md"), "utf-8");
-    expect(indexContent).not.toContain("[[wiki/concepts/z.md]]");
+    expect(indexContent).not.toContain("[[wiki/topics/z.md]]");
   });
 
   it("delete fails for missing page", async () => {
     await initWiki();
-    const del = await runWiki(["-w", "testwiki", "delete", "wiki/concepts/nope.md"]);
+    const del = await runWiki(["-w", "testwiki", "delete", "wiki/topics/nope.md"]);
     expect(del.exitCode).toBe(1);
     expect(del.stderr).toContain("not found");
   });
@@ -196,30 +196,30 @@ describe("list command", () => {
   it("lists pages in wiki", async () => {
     await initWiki();
     await runWiki(
-      ["-w", "testwiki", "write", "wiki/concepts/a.md"],
+      ["-w", "testwiki", "write", "wiki/topics/a.md"],
       jp({ title: "A", content: "content a" }),
     );
     await runWiki(
-      ["-w", "testwiki", "write", "wiki/sources/b.md"],
+      ["-w", "testwiki", "write", "wiki/topics/b.md"],
       jp({ title: "B", content: "content b" }),
     );
     const result = await runWiki(["-w", "testwiki", "list"]);
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain("wiki/concepts/a.md");
-    expect(result.stdout).toContain("wiki/sources/b.md");
+    expect(result.stdout).toContain("wiki/topics/a.md");
+    expect(result.stdout).toContain("wiki/topics/b.md");
   });
 
   it("lists pages in json format", async () => {
     await initWiki();
     await runWiki(
-      ["-w", "testwiki", "write", "wiki/concepts/x.md"],
+      ["-w", "testwiki", "write", "wiki/topics/x.md"],
       jp({ title: "X", content: "content" }),
     );
     const result = await runWiki(["-w", "testwiki", "list", "--json"]);
     expect(result.exitCode).toBe(0);
     const data = JSON.parse(result.stdout);
     expect(Array.isArray(data)).toBe(true);
-    expect(data).toContain("wiki/concepts/x.md");
+    expect(data).toContain("wiki/topics/x.md");
   });
 });
 
@@ -229,11 +229,11 @@ describe("search command", () => {
   it("finds pages matching query", async () => {
     await initWiki();
     await runWiki(
-      ["-w", "testwiki", "write", "wiki/concepts/ml.md"],
+      ["-w", "testwiki", "write", "wiki/topics/ml.md"],
       jp({ title: "ML", content: "Machine learning is a field of AI." }),
     );
     await runWiki(
-      ["-w", "testwiki", "write", "wiki/concepts/cooking.md"],
+      ["-w", "testwiki", "write", "wiki/topics/cooking.md"],
       jp({ title: "Cooking", content: "Cooking is the art of preparing food." }),
     );
     const result = await runWiki(["-w", "testwiki", "search", "machine learning"]);
@@ -244,7 +244,7 @@ describe("search command", () => {
   it("returns json format", async () => {
     await initWiki();
     await runWiki(
-      ["-w", "testwiki", "write", "wiki/concepts/test.md"],
+      ["-w", "testwiki", "write", "wiki/topics/test.md"],
       jp({ title: "Test", content: "Searchable content here." }),
     );
     const result = await runWiki(["-w", "testwiki", "search", "searchable", "--json"]);
@@ -269,7 +269,7 @@ describe("lint command", () => {
   it("detects broken wikilinks", async () => {
     await initWiki();
     await runWiki(
-      ["-w", "testwiki", "write", "wiki/concepts/broken.md"],
+      ["-w", "testwiki", "write", "wiki/topics/broken.md"],
       jp({
         title: "Broken",
         content: "Links to [[nonexistent]].",
@@ -282,7 +282,7 @@ describe("lint command", () => {
 
   it("detects missing frontmatter", async () => {
     await initWiki();
-    await writeFile(join(wikiDir, "wiki/concepts/nofm.md"), "No frontmatter here.", "utf-8");
+    await writeFile(join(wikiDir, "wiki/topics/nofm.md"), "No frontmatter here.", "utf-8");
     const result = await runWiki(["-w", "testwiki", "lint"]);
     expect(result.stdout).toContain("Missing frontmatter");
   });
@@ -327,18 +327,18 @@ describe("links command", () => {
   it("shows outbound links for a page", async () => {
     await initWiki();
     await runWiki(
-      ["-w", "testwiki", "write", "wiki/concepts/a.md"],
+      ["-w", "testwiki", "write", "wiki/topics/a.md"],
       jp({ title: "A", content: "Links to [[b]] and [[c]]." }),
     );
     await runWiki(
-      ["-w", "testwiki", "write", "wiki/concepts/b.md"],
+      ["-w", "testwiki", "write", "wiki/topics/b.md"],
       jp({ title: "B", content: "Target B." }),
     );
     await runWiki(
-      ["-w", "testwiki", "write", "wiki/concepts/c.md"],
+      ["-w", "testwiki", "write", "wiki/topics/c.md"],
       jp({ title: "C", content: "Target C." }),
     );
-    const result = await runWiki(["-w", "testwiki", "links", "wiki/concepts/a.md"]);
+    const result = await runWiki(["-w", "testwiki", "links", "wiki/topics/a.md"]);
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("b");
     expect(result.stdout).toContain("c");
@@ -349,14 +349,14 @@ describe("backlinks command", () => {
   it("shows pages linking to a target", async () => {
     await initWiki();
     await runWiki(
-      ["-w", "testwiki", "write", "wiki/concepts/linker.md"],
+      ["-w", "testwiki", "write", "wiki/topics/linker.md"],
       jp({ title: "Linker", content: "Links to [[target]]." }),
     );
     await runWiki(
-      ["-w", "testwiki", "write", "wiki/concepts/target.md"],
+      ["-w", "testwiki", "write", "wiki/topics/target.md"],
       jp({ title: "Target", content: "Target page." }),
     );
-    const result = await runWiki(["-w", "testwiki", "backlinks", "wiki/concepts/target.md"]);
+    const result = await runWiki(["-w", "testwiki", "backlinks", "wiki/topics/target.md"]);
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("linker");
   });

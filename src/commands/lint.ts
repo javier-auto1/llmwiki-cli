@@ -45,7 +45,7 @@ export function makeLintCommand(): Command {
         const content = await ctx.provider.readPage(page);
         if (!content) continue;
 
-        if (page === "wiki/index.md") continue;
+        if (page === "wiki/index.md" || page === "SCHEMA.md") continue;
 
         if (!hasFrontmatter(content)) {
           issues.push({

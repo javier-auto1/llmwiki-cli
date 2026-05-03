@@ -94,11 +94,11 @@ describe("search", () => {
   });
 
   it("handles dir filter", async () => {
-    await wiki.writePage("wiki/concepts/a.md", "Machine learning concept.");
-    await wiki.writePage("wiki/sources/b.md", "Machine learning paper.");
-    const results = await search(wiki, "machine", { dir: "wiki/concepts" });
+    await wiki.writePage("wiki/topics/a.md", "Machine learning concept.");
+    await wiki.writePage("wiki/projects/b.md", "Machine learning paper.");
+    const results = await search(wiki, "machine", { dir: "wiki/topics" });
     expect(results).toHaveLength(1);
-    expect(results[0]!.path).toBe("wiki/concepts/a.md");
+    expect(results[0]!.path).toBe("wiki/topics/a.md");
   });
 
   it("snippet adds ellipsis for middle-of-content matches", async () => {

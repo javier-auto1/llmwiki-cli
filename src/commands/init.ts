@@ -43,12 +43,10 @@ export function makeInitCommand(): Command {
 
         const dirs = [
           resolve(targetDir, "raw"),
-          resolve(targetDir, "raw/assets"),
           resolve(targetDir, "wiki"),
-          resolve(targetDir, "wiki/entities"),
-          resolve(targetDir, "wiki/concepts"),
-          resolve(targetDir, "wiki/sources"),
-          resolve(targetDir, "wiki/synthesis"),
+          resolve(targetDir, "wiki/topics"),
+          resolve(targetDir, "wiki/projects"),
+          resolve(targetDir, "wiki/playbooks"),
         ];
         await Promise.all(dirs.map((d) => mkdir(d, { recursive: true })));
 

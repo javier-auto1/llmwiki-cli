@@ -19,14 +19,12 @@ export function getDefaultSchema(name: string, domain: string): string {
 ## Wiki Structure
 
 \`\`\`
-raw/                  # Immutable source documents (paste originals here)
-  assets/             # Downloaded images and files
-wiki/                 # LLM-generated pages (all knowledge lives here)
+raw/                  # Conversation transcripts and raw sources (immutable)
+wiki/                 # LLM-curated knowledge pages (all knowledge lives here)
   index.md            # Master index of all pages (updated by wiki write)
-  entities/           # People, orgs, products
-  concepts/           # Ideas, frameworks, theories
-  sources/            # One summary per ingested source
-  synthesis/          # Cross-cutting analysis
+  topics/             # Evergreen knowledge: what we know, how things work, decisions
+  projects/           # Time-bounded context per project (archive when done)
+  playbooks/          # Prescriptive processes: how we do things (follow this)
 \`\`\`
 
 ## Page Format
@@ -84,15 +82,25 @@ wiki status [--json]                                # Wiki overview stats
 
 ## Ingest Workflow
 
-When ingesting a new source:
+Before writing anything, critically evaluate: does this conversation contain knowledge worth preserving? Skip ingestion entirely if the conversation is exploratory with no conclusions, a one-off question with no reusable answer, or already fully covered by existing wiki pages.
 
-1. Save the raw source to \`raw/\` (paste full text, keep immutable)
-2. Create a source summary page in \`wiki/sources/\`
-3. Extract entities → create/update pages in \`wiki/entities/\`
-4. Extract concepts → create/update pages in \`wiki/concepts/\`
-5. If cross-cutting insights emerge → create \`wiki/synthesis/\` pages
-6. For each new or updated page under \`wiki/\`, use \`wiki write <path>\` with JSON on stdin — the CLI writes YAML frontmatter plus body and **upserts** \`wiki/index.md\` automatically.
-7. Version changes with Git or another tool outside the CLI if you need history
+If worth ingesting, ask the user clarifying questions before writing:
+- What project is this related to, if any?
+- Is there a specific page this should update, or is this a new topic?
+
+Then identify where each piece of knowledge belongs:
+- Evergreen knowledge about a subject → \`wiki/topics/<subject>.md\`
+- Active project context → \`wiki/projects/<name>.md\`
+- Repeatable process → \`wiki/playbooks/<process>.md\`
+
+A focused conversation may only update one page. Multiple pages are a possibility, not a requirement.
+
+For each page to write or update:
+1. \`wiki read\` the target page if it exists — merge, don't duplicate
+2. \`wiki write\` with:
+   - \`description\`: executive summary in 1–2 sentences (mandatory)
+   - \`content\`: body with **bolded key passages** on the most important extracts
+3. For each updated page, the CLI upserts \`wiki/index.md\` automatically
 
 ## Query Workflow
 
@@ -132,13 +140,11 @@ Periodically check wiki health:
 export function getDefaultIndex(): string {
   return `# Index
 
-## Sources
+## Topics
 
-## Entities
+## Projects
 
-## Concepts
-
-## Synthesis
+## Playbooks
 `;
 }
 
@@ -240,7 +246,7 @@ function resolveLink(target, allFiles) {
   const withWiki = wikiPrefix + withMd;
   if (candidates.includes(withWiki)) return withWiki;
 
-  const subdirs = ["entities", "concepts", "sources", "synthesis"];
+  const subdirs = ["topics", "projects", "playbooks"];
   for (const sub of subdirs) {
     const candidate = wikiPrefix + sub + "/" + withMd;
     if (candidates.includes(candidate)) return candidate;
@@ -479,6 +485,7 @@ const html = \`<!DOCTYPE html>
       display: flex;
       flex-direction: column;
       min-height: 0;
+      height: calc(100vh - 80px);
       background: linear-gradient(180deg, #fffefb 0%, var(--paper) 100%);
       color: var(--ink);
       border-left: 3px solid var(--wood);
@@ -521,11 +528,18 @@ const html = \`<!DOCTYPE html>
     .viz-doc-body {
       flex: 1;
       min-height: 0;
-      overflow-y: auto;
+      overflow-y: scroll;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(92,61,46,0.4) transparent;
       padding: 1rem 1.15rem 1.5rem;
       font-size: 0.95rem;
       line-height: 1.62;
     }
+    .viz-doc-body::-webkit-scrollbar { width: 8px; }
+    .viz-doc-body::-webkit-scrollbar-track { background: rgba(0,0,0,0.15); border-radius: 4px; }
+    .viz-doc-body::-webkit-scrollbar-thumb { background: rgba(92,61,46,0.7); border-radius: 4px; }
+    .viz-doc-body::-webkit-scrollbar-thumb:hover { background: rgba(92,61,46,1); }
     .viz-reader-empty {
       margin: 0;
       opacity: 0.78;
@@ -658,10 +672,9 @@ const html = \`<!DOCTYPE html>
         <button type="button" id="btnReset">Reset view & focus</button>
       </div>
       <h2>Shelf key</h2>
-      <div class="viz-legend-row"><span class="swatch" style="background:#4a9eff"></span><span><strong>Entities</strong> — who &amp; what you track</span></div>
-      <div class="viz-legend-row"><span class="swatch" style="background:#4caf50"></span><span><strong>Concepts</strong> — ideas &amp; frameworks</span></div>
-      <div class="viz-legend-row"><span class="swatch" style="background:#ff9800"></span><span><strong>Sources</strong> — readings &amp; inputs</span></div>
-      <div class="viz-legend-row"><span class="swatch" style="background:#ab47bc"></span><span><strong>Synthesis</strong> — cross-cutting views</span></div>
+      <div class="viz-legend-row"><span class="swatch" style="background:#4a9eff"></span><span><strong>Topics</strong> — evergreen knowledge</span></div>
+      <div class="viz-legend-row"><span class="swatch" style="background:#4caf50"></span><span><strong>Projects</strong> — time-bounded context</span></div>
+      <div class="viz-legend-row"><span class="swatch" style="background:#ff9800"></span><span><strong>Playbooks</strong> — how we do things</span></div>
       <div class="viz-legend-row"><span class="swatch" style="background:#888"></span><span><strong>Other</strong> — index, log, templates…</span></div>
       <p class="viz-hint">Tip: click a node in the graph to open the full page in the reader column and spotlight its neighborhood. On small screens the reader stacks below the graph. Rebuild graph + site after edits. Click the same node again to clear.</p>
     </aside>
@@ -713,7 +726,32 @@ const html = \`<!DOCTYPE html>
         return;
       }
       const dirty = marked.parse(raw, mdOpts);
-      bodyEl.innerHTML = DOMPurify.sanitize(dirty, { USE_PROFILES: { html: true } });
+      const clean = DOMPurify.sanitize(dirty, { USE_PROFILES: { html: true } });
+      const wparts = clean.split("[[");
+      let wout = wparts[0];
+      for (let wi = 1; wi < wparts.length; wi++) {
+        const wend = wparts[wi].indexOf("]]");
+        if (wend === -1) { wout += "[[" + wparts[wi]; continue; }
+        const inner = wparts[wi].slice(0, wend);
+        const after = wparts[wi].slice(wend + 2);
+        const pipe = inner.indexOf("|");
+        const wtarget = pipe >= 0 ? inner.slice(0, pipe) : inner;
+        const wlabel = pipe >= 0 ? inner.slice(pipe + 1) : inner;
+        const wnode = data.nodes.find(n => {
+          const base = n.id.split("/").pop().replace(".md", "");
+          return base === wtarget || n.id === wtarget || n.id === wtarget + ".md";
+        });
+        if (!wnode) wout += '<span class="wiki-link-broken">[[' + wlabel + ']]</span>';
+        else wout += '<span class="wiki-link" data-node-id="' + wnode.id + '" style="cursor:pointer;color:#7c9eff;text-decoration:underline;">' + wlabel + '</span>';
+        wout += after;
+      }
+      bodyEl.innerHTML = wout;
+      bodyEl.querySelectorAll(".wiki-link").forEach(el => {
+        el.addEventListener("click", () => {
+          const wn = data.nodes.find(n => n.id === el.dataset.nodeId);
+          if (wn) showReader(wn);
+        });
+      });
     }
     function clearReader() {
       const titleEl = document.getElementById("readerTitle");
@@ -732,16 +770,17 @@ const html = \`<!DOCTYPE html>
     }
 
     const DIR_COLORS = {
-      entities: "#4a9eff",
-      concepts: "#4caf50",
-      sources: "#ff9800",
-      synthesis: "#ab47bc",
+      topics: "#4a9eff",
+      projects: "#4caf50",
+      playbooks: "#ff9800",
     };
 
     function layoutSize() {
       const el = document.querySelector(".viz-canvas-wrap");
-      const r = el ? el.getBoundingClientRect() : { width: 400, height: 400 };
-      return { w: Math.max(240, r.width), h: Math.max(240, r.height) };
+      const r = el ? el.getBoundingClientRect() : null;
+      const w = (r && r.width > 0) ? r.width : window.innerWidth * 0.52;
+      const h = (r && r.height > 0) ? r.height : window.innerHeight - 60;
+      return { w: Math.max(240, w), h: Math.max(240, h) };
     }
 
     let { w: width, h: height } = layoutSize();
@@ -992,6 +1031,7 @@ const html = \`<!DOCTYPE html>
       resizeT = setTimeout(relayout, 120);
     });
 
+    requestAnimationFrame(() => requestAnimationFrame(relayout));
     applyFocusOpacity();
   </script>
 </body>

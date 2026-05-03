@@ -271,10 +271,9 @@ describe("templates", () => {
 
   it("getDefaultIndex has section headers", () => {
     const index = getDefaultIndex();
-    expect(index).toContain("## Sources");
-    expect(index).toContain("## Entities");
-    expect(index).toContain("## Concepts");
-    expect(index).toContain("## Synthesis");
+    expect(index).toContain("## Topics");
+    expect(index).toContain("## Projects");
+    expect(index).toContain("## Playbooks");
   });
 
   it("getVizWorkflow returns valid YAML with required fields", () => {
@@ -338,10 +337,7 @@ describe("init command (integration)", () => {
     expect(wikoDirStat.isDirectory()).toBe(true);
     const rawDirStat = await stat(join(wikiDir, "raw"));
     expect(rawDirStat.isDirectory()).toBe(true);
-    const assetsDirStat = await stat(join(wikiDir, "raw/assets"));
-    expect(assetsDirStat.isDirectory()).toBe(true);
-
-    for (const sub of ["entities", "concepts", "sources", "synthesis"]) {
+    for (const sub of ["topics", "projects", "playbooks"]) {
       const s = await stat(join(wikiDir, "wiki", sub));
       expect(s.isDirectory()).toBe(true);
     }
