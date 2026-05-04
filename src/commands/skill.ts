@@ -77,6 +77,8 @@ wiki/                 # LLM-curated knowledge pages (all knowledge lives here)
 
 ### Ingest a conversation
 
+The wiki is a reference — write each page as if you'll need it in 6 months with no other context. Err toward more detail, not less.
+
 Before writing anything, critically evaluate: does this conversation contain knowledge worth preserving? Skip ingestion entirely if the conversation is exploratory with no conclusions, a one-off question with no reusable answer, or already fully covered by existing wiki pages.
 
 If worth ingesting, ask the user clarifying questions before writing:
@@ -92,20 +94,27 @@ A focused conversation may only update one page. Multiple pages are a possibilit
 
 For each page to write or update:
 1. \`wiki read\` the target page if it exists — merge, don't duplicate
-2. \`wiki write\` with \`description\` as a mandatory 1–2 sentence executive summary, and body content with **bolded key passages** on the most important extracts
+2. \`wiki write\` with:
+3. After all writes, commit: \`git -C ~/my-wiki add -A && git -C ~/my-wiki commit -m "ingest: <brief description of what was captured>"\`
+
+\`wiki write\` fields:
+   - \`description\`: mandatory 1–2 sentence executive summary
+   - body covering all relevant knowledge from the source; **bold key phrases** to help human readers scan
+   - always append a collapsed Sources block at the end of the content, listing every source used:
+     - local file copied to raw/: \`<span class="raw-link" data-raw-src="raw/filename.md">raw/filename.md</span>\`
+     - external URL: \`<a href="https://..." target="_blank" rel="noopener">descriptive title</a>\`
+     - format: \`<details>\\n<summary>Sources</summary>\\n<ul>\\n<li>...</li>\\n</ul>\\n</details>\`
 
 \`\`\`bash
-# Optional: save raw transcript
-wiki write raw/conversation-2024-01-15.md <<'EOF'
-{"title":"conversation-2024-01-15","content":"Full transcript…"}
-EOF
+# Copy raw file first when source is a local file
+cp /path/to/original.md ~/my-wiki/raw/original.md
 
-# Focused conversation → single topic update
+# Sources block with mixed raw file + URL
 wiki write wiki/topics/auth-system.md <<'EOF'
 {
   "title": "Auth System",
   "description": "JWT-based auth with Redis session store; rotate keys quarterly.",
-  "content": "## How it works\\n\\n**We use JWT tokens with a Redis session store.** Tokens expire after 24h.\\n\\n..."
+  "content": "## How it works\\n\\n**We use JWT tokens with a Redis session store.** Tokens expire after 24h.\\n\\n...\\n\\n<details>\\n<summary>Sources</summary>\\n<ul>\\n<li><span class=\\"raw-link\\" data-raw-src=\\"raw/auth-notes.md\\">raw/auth-notes.md</span></li>\\n<li><a href=\\"https://docs.example.com/auth\\" target=\\"_blank\\" rel=\\"noopener\\">Auth docs</a></li>\\n</ul>\\n</details>"
 }
 EOF
 

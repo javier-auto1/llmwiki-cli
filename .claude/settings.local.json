@@ -32,7 +32,13 @@
       "Bash(grep -r \"export\\\\|json\\\\|format\" /c/Workspace/Personal/llm-wiki/docs/*.md)",
       "Bash(ls:*)",
       "Bash(npm install:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Read(//Users/javier.otero/Repos/ds-c2b-autopricer-service/**)",
+      "Read(//Users/javier.otero/Repos/ds-retail-autopricer-service/queries/**)",
+      "Read(//Users/javier.otero/Repos/ds-retail-autopricer-service/results/**)",
+      "Read(//Users/javier.otero/Repos/ds-retail-autopricer-service-fresh/**)",
+      "Read(//Users/javier.otero/Repos/ds-auto-pricing-service/**)",
+      "Read(//Users/javier.otero/Repos/data-science/retail_repricing_orchestrator/**)"
     ]
   }
 }
