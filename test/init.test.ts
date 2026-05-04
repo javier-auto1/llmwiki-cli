@@ -193,8 +193,14 @@ describe("registry", () => {
 
 describe("resolver", () => {
   it("resolveWiki returns null when no wiki exists", async () => {
-    const result = await resolveWiki({});
-    expect(result).toBeNull();
+    const origCwd = process.cwd();
+    process.chdir(testDir);
+    try {
+      const result = await resolveWiki({});
+      expect(result).toBeNull();
+    } finally {
+      process.chdir(origCwd);
+    }
   });
 
   it("resolveWiki finds wiki by --wiki flag", async () => {

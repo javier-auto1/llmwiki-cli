@@ -216,6 +216,8 @@ function findMdFiles(dir) {
 }
 
 function extractTitle(content, filePath) {
+  const fmTitle = extractFrontmatterField(content, "title");
+  if (fmTitle) return fmTitle;
   const match = content.match(/^#\\s+(.+)$/m);
   if (match) return match[1].trim();
   return path.basename(filePath, ".md").replace(/-/g, " ");

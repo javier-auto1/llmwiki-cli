@@ -1,18 +1,20 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { mkdtemp, rm, readFile, writeFile } from "fs/promises";
-import { join } from "path";
+import { join, resolve } from "path";
 import { tmpdir } from "os";
+
+const projectRoot = resolve(import.meta.dir, "..");
 
 let testDir: string;
 let wikiDir: string;
 let configDir: string;
 const origConfigDir = process.env.LLMWIKI_CONFIG_DIR;
 
-async function runWiki(args: string[], input?: string): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+async function runWiki(args: string[], input?: string, cwd = process.cwd()): Promise<{ stdout: string; stderr: string; exitCode: number }> {
   const proc = Bun.spawn(
-    ["bun", "run", "src/index.ts", ...args],
+    ["bun", "run", join(projectRoot, "src/index.ts"), ...args],
     {
-      cwd: process.cwd(),
+      cwd,
       stdout: "pipe",
       stderr: "pipe",
       stdin: input ? new Blob([input]) : undefined,
@@ -380,7 +382,7 @@ describe("orphans command", () => {
 
 describe("error handling", () => {
   it("fails gracefully when no wiki found", async () => {
-    const result = await runWiki(["read", "something.md"]);
+    const result = await runWiki(["read", "something.md"], undefined, configDir);
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("No wiki found");
   });
