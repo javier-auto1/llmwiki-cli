@@ -44,6 +44,20 @@ git -C ~/my-wiki add -A && git -C ~/my-wiki commit -m "ingest: <description>"
 
 This keeps your wiki versioned automatically. You never need to run git manually.
 
+## Optional: link graph visualization
+
+You can get an interactive d3-force graph. Simply ask Claude to create it, or manually from this repo, run:
+```bash
+bun scripts/generate-viz-scripts.ts ~/my-wiki/scripts
+```
+Then from your wiki folder:
+```bash
+node scripts/build-graph.cjs && node scripts/build-site.cjs
+```
+(`build-graph` parses your wiki into a graph, `build-site` renders it as HTML — both needed.)
+The visualization is generated at `~/my-wiki/dist/index.html` — open it directly in your browser.
+
+
 ## Useful commands
 
 ```bash
