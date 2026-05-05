@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { resolve, basename } from "path";
 import { mkdir, writeFile } from "fs/promises";
+import { execSync } from "child_process";
 import { loadConfig, saveConfig } from "../lib/config.ts";
 import { addToRegistry } from "../lib/registry.ts";
 import {
@@ -70,6 +71,17 @@ export function makeInitCommand(): Command {
           created: config.created,
         };
         await addToRegistry(name, entry);
+
+        try {
+          execSync("git init", { cwd: targetDir, stdio: "ignore" });
+          execSync("git add -A", { cwd: targetDir, stdio: "ignore" });
+          execSync(`git commit -m "init: ${name} wiki"`, {
+            cwd: targetDir,
+            stdio: "ignore",
+          });
+        } catch {
+          // git not available or failed — not a fatal error
+        }
 
         console.log(`Wiki "${name}" initialized at ${targetDir}`);
         console.log(`Domain: ${domain}`);
